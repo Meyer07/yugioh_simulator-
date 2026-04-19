@@ -134,6 +134,48 @@ class GameState:
         self.player.has_normal_summoned = True
         self.log(f"Set a monster face-down in DEF position.")
         return True
+    
+    #field actions
+    def flip_face_up(self,card:Card)->bool:
+        if card not in self.player.field_monsters:
+            self.log("This card is not on your field")
+            return False
+        if card.is_face_up:
+            self.log("Card is already face up")
+            return False
+        if self.current_phase not in (Phase.MAIN1,Phase.MAIN2):
+            self.log("You cannot flip summon out side of the main phases")
+            return False
+        card.is_face_up=True
+        card.position=CardPosition.ATTACK
+        self.log(f"{card.name} has been flipped face up")
+    
+    def change_position(self,card:Card)->bool:
+        if card not in self.player.field_monsters:
+            self.log("This card is not on your field")
+            return False
+        if not card.is_face_up:
+            self.log("This monster cannot be turned face up")
+            return False
+        if self.current_phase not in(Phase.MAIN1,Phase.MAIN2):
+            self.log("You cannot flip summon in this phase")
+            return False
+        if card.position==CardPosition.ATTACK:
+            card.position==CardPosition.DEFENSE
+            self.log("f{card.name} has been changed to defense")
+        else:
+            card.position==CardPosition.ATTACK
+            self.log("f{card.name}has been changed to attack")
+        return True
+    
+    def send_to_graveyard(self,card:Card,owner:str="player")->bool:
+        p=self.player if owner=="player" else self.opponent
+        p.send_graveyard(card)
+        self.log("f{card.name} was sent to the graveyard")
+        return True
+
+
+
         
 
     def log(self, msg):
