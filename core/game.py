@@ -1,4 +1,4 @@
-import json,os
+import json,os,random
 from enum import Enum
 from typing import List, Optional
 from core.card import Card, CardType, MonsterType, CardPosition
@@ -40,8 +40,10 @@ class Player():
     def monster_zone_available(self):
         return any(s is None for s in self.field_monsters)
     
-    def place_monster(self,card,zone_index):
+    def place_monster(self,card,zone_index,position:CardPosition=CardPosition.ATTACK,face_up=True):
         self.field_monsters[zone_index]=card
+        card.is_face_up = face_up
+        card.position   = position
         if card in self.hand:
             self.hand.remove(card)
         
@@ -49,12 +51,15 @@ class Player():
         self.graveyard.append(card)
         for i,s in enumerate(self.field_monsters):
             if s==card:
-                self.monsters[i]=None
+                self.field_monsters[i]=None
                 return 
         for i,s in enumerate(self.field_st):
             if s==card:
-                self.field_st[i]=None
+                self.field_spells[i]=None
                 return
+        
+    def shuffle_deck(self):
+        random.shuffle(self.deck)
     
 class GameState:
 
@@ -69,6 +74,8 @@ class GameState:
         self.duel_log: List[str] = []
         self.winner: Optional[str] = None
         self._load_decks()
+        self.player.shuffle_deck()
+        self.opponent.shuffle_deck()
     
     def _card_from_dict(self,d):
         ct = CardType(d.get("card_type","Monster"))
@@ -91,6 +98,43 @@ class GameState:
         pd = decks.get(self.series,{})
         self.player.deck   = [lookup[i] for i in pd.get("player",[])   if i in lookup]
         self.opponent.deck = [lookup[i] for i in pd.get("opponent",[]) if i in lookup]
+    
+    def can_normal_summon(self)->bool:
+        return(
+            self.active_player==self.player
+            and not self.player.has_normal_summoned
+            and self.current_phase in (Phase.MAIN1,Phase.MAIN2)
+            )
+    
+    def normal_summon(self,card:Card,zone_index:int)->bool:
+        if not self.can_normal_summon():
+            self.log("You have already normal summoned this turn")
+            return False
+        tributes=card.tributes_required()
+        monsters_on_field=sum(1 for m in self.player.field_monsters if m is not None)
+        if monsters_on_field<tributes:
+            self.log(f"{card.name} needs {tributes} tribute(s) - not enough tributes")
+            return False
+        self.player.place_monster(card,zone_index,face_up=True,position=CardPosition.ATTACK)
+        self.player.has_normal_summoned=True
+        self.log(f"{card.name} has been normal summoned!")
+        return True
+        
+    
+    def set_monster(self,card:Card,zone_index:int)->bool:
+        if not self.can_normal_summon:
+            self.log("You have already normal summoned this turn")
+            return False
+        tributes = card.tributes_required()
+        monsters_on_field = sum(1 for m in self.player.field_monsters if m is not None)
+        if monsters_on_field < tributes:
+            self.log(f"{card.name} needs {tributes} tribute(s) to set!")
+            return False
+        self.player.place_monster(card, zone_index, face_up=False, position=CardPosition.DEFENSE)
+        self.player.has_normal_summoned = True
+        self.log(f"Set a monster face-down in DEF position.")
+        return True
+        
 
     def log(self, msg):
         self.duel_log.append(msg)
