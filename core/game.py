@@ -16,12 +16,12 @@ class Player():
     def __init__(self,name,starting_lp):
         self.name=name
         self.lp=starting_lp
-        self.hand=List[Card]=[]
-        self.deck=List[Card]=[]
-        self.graveyard=List[Card]=[]
-        self.field_monsters=List[Optional[Card]]=[None]*5
-        self.field_st=List[Optional[Card]]=[None]*5
-        self.extra_deck=List[Card]=[]
+        self.hand: List[Card] = []
+        self.deck: List[Card] = []
+        self.graveyard: List[Card] = []
+        self.field_monsters: List[Optional[Card]] = [None]*5
+        self.field_spells:   List[Optional[Card]] = [None]*5
+        self.extra_deck: List[Card] = []
         self.has_normal_summoned=False
 
     def draw_card(self):
@@ -70,7 +70,7 @@ class GameState:
         self.winner: Optional[str] = None
         self._load_decks()
     
-    def _card_from_deck(self,d):
+    def _card_from_dict(self,d):
         ct = CardType(d.get("card_type","Monster"))
         mt = MonsterType(d["monster_type"]) if d.get("monster_type") else None
         return Card (id=d["id"],name=d["name"],card_type=ct,description=d.get("description",""),atk=d.get("atk"),defense=d.get("def"),level=d.get("level"),

@@ -3,18 +3,19 @@ from enum import Enum
 from typing import Optional
 
 class CardType(Enum):
-    MONSTER="Monster Card"
-    SPELL="Spell Card"
-    TRAP="Trap Card"
+    MONSTER="Monster"
+    SPELL="Spell"
+    TRAP="Trap"
 
 
 class MonsterType(Enum):
-    NORMAL="Normal Monster"
-    EFFECT="Effect Monster"
-    FUSION="Fusion Monster"
-    SYNCHRO="Synchro Monster"
-    XYZ="XYZ Monster"
-    PENDULUM="Pendulum Monster"
+    NORMAL="Normal"
+    EFFECT="Effect"
+    RITUAL="Ritual"
+    FUSION="Fusion"
+    SYNCHRO="Synchro"
+    XYZ="Xyz"
+    PENDULUM="Pendulum"
 
 class CardPosition(Enum):
     ATTACK="ATK"

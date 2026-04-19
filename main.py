@@ -15,7 +15,7 @@ def main():
     pygame.init()
     pygame.display.set_caption(TITLE)
     screen=pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HEIGHT))
-    clock=pygame.time.clock()
+    clock=pygame.time.Clock()
 
 
 
