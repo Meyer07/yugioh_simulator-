@@ -41,6 +41,7 @@ class Card:
     series: list = field(default_factory=list)
     position: CardPosition = CardPosition.ATTACK
     is_face_up: bool = True
+    has_attacked:bool=False
     xyz_materials: list = field(default_factory=list)
 
     def __str__(self):

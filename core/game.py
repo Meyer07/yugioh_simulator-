@@ -53,7 +53,7 @@ class Player():
             if s==card:
                 self.field_monsters[i]=None
                 return 
-        for i,s in enumerate(self.field_st):
+        for i,s in enumerate(self.field_spells):
             if s==card:
                 self.field_spells[i]=None
                 return
@@ -122,7 +122,7 @@ class GameState:
         
     
     def set_monster(self,card:Card,zone_index:int)->bool:
-        if not self.can_normal_summon:
+        if not self.can_normal_summon():
             self.log("You have already normal summoned this turn")
             return False
         tributes = card.tributes_required()
@@ -161,22 +161,50 @@ class GameState:
             self.log("You cannot flip summon in this phase")
             return False
         if card.position==CardPosition.ATTACK:
-            card.position==CardPosition.DEFENSE
+            card.position=CardPosition.DEFENSE
             self.log("f{card.name} has been changed to defense")
         else:
-            card.position==CardPosition.ATTACK
+            card.position=CardPosition.ATTACK
             self.log("f{card.name}has been changed to attack")
         return True
     
     def send_to_graveyard(self,card:Card,owner:str="player")->bool:
         p=self.player if owner=="player" else self.opponent
         p.send_graveyard(card)
-        self.log("f{card.name} was sent to the graveyard")
+        self.log(f"{card.name} was sent to the graveyard")
         return True
+    
+    def can_attack(self,attacker:Card)->bool:
+        return (
+            self.current_phase == Phase.BATTLE
+            and self.active_player == self.player
+            and attacker in self.player.field_monsters
+            and attacker is not None
+            and attacker.is_face_up
+            and attacker.position == CardPosition.ATTACK
+            and not attacker.has_attacked
+            and attacker.atk is not None
+        )
+    
+    def declare_attack(self,attacker: Card, target: Optional[Card] = None)->bool:
+        if not self.can_attack:
+            self.log("That monster can't attack right now")
+            return False
 
-
-
+        opp_face_up=[m for m in self.opponent.field_monsters
+                       if m is not None and m.is_face_up]
         
+        if target is None:
+            if opp_face_up:
+                self.log("You must attack a monster — opponent has face-up monsters!")
+                return False
+            self.log(f"{attacker.name} attacks directly! ({attacker.atk} damage)")
+            self.opponent.take_damage(attacker.atk)
+            attacker.has_attacked = True
+            self.log(f"{self.opponent.name} LP: {self.opponent.lp:,}")
+            self.check_win_condition()
+            return True
+
 
     def log(self, msg):
         self.duel_log.append(msg)
@@ -192,10 +220,18 @@ class GameState:
     def _end_turn(self):
         self.active_player.has_normal_summoned = False
         self.active_player = self.opponent if self.active_player == self.player else self.player
-        self.turn_number += 1
+        self.turn_number  += 1
         self.current_phase = Phase.DRAW
         self.log(f"--- Turn {self.turn_number}: {self.active_player.name} ---")
- 
+        if self.active_player == self.opponent:
+            drawn = self.opponent.draw_card()
+            if drawn:
+                self.log(f"{self.opponent.name} draws a card.")
+        else:
+            drawn = self.player.draw_card()
+        if drawn:
+            self.log(f"You draw: {drawn.name}")
+
     def check_win_condition(self):
         if self.player.lp   <= 0: self.winner = self.opponent.name
         elif self.opponent.lp <= 0: self.winner = self.player.name
