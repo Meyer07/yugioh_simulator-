@@ -236,6 +236,8 @@ class GameState:
         if self.player.lp   <= 0: self.winner = self.opponent.name
         elif self.opponent.lp <= 0: self.winner = self.player.name
         return self.winner
+    
+    
 
             
 
